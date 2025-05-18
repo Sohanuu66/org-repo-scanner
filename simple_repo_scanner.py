@@ -1,49 +1,46 @@
-# simple_repo_scanner.py
-import os
 import requests
 import pandas as pd
-from urllib.parse import urljoin
 
-def get_all_repos(org_name, token):
-    base_url = f"https://api.github.com/orgs/{org_name}/"
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github+json"}
-    
+# Replace with your token and org name:
+GITHUB_TOKEN = "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"
+ORG_NAME = "Sohan-org"
+
+API_URL = f"https://api.github.com/orgs/{ORG_NAME}/repos"
+HEADERS = {
+    "Authorization": f"token {GITHUB_TOKEN}",
+    "Accept": "application/vnd.github+json"
+}
+
+def get_repos():
     repos = []
     page = 1
-    
     while True:
-        url = urljoin(base_url, "repos")
-        response = requests.get(url, headers=headers, params={"per_page": 100, "page": page})
-        
+        response = requests.get(API_URL, headers=HEADERS, params={"per_page": 100, "page": page})
         if response.status_code != 200:
-            print(f"Error: {response.status_code} - {response.text}")
+            print("Error:", response.status_code, response.text)
             break
-            
         data = response.json()
-        if not data: break
-            
-        repos.extend([{
-            "Name": repo["name"],
-            "URL": repo["html_url"],
-            "Visibility": "Private" if repo["private"] else "Public",
-            "Last Updated": repo["updated_at"]
-        } for repo in data])
-        
+        if not data:
+            break
+        for repo in data:
+            repos.append({
+                "Name": repo["name"],
+                "Visibility": "Private" if repo["private"] else "Public",
+                "Fork": repo["fork"],
+                "URL": repo["html_url"],
+                "Last Updated": repo["updated_at"]
+            })
         page += 1
-        
     return repos
 
+def save_to_excel(data):
+    df = pd.DataFrame(data)
+    df.to_excel("repos_report.xlsx", index=False)
+    print("Report saved as repos_report.xlsx")
+
 if __name__ == "__main__":
-    token = os.getenv("GITHUB_TOKEN")
-    org_name = os.getenv("ORG_NAME")
-    
-    if not (token and org_name):
-        print("Missing environment variables! Need GITHUB_TOKEN and ORG_NAME")
-        exit(1)
-        
-    repos = get_all_repos(org_name, token)
+    repos = get_repos()
     if repos:
-        pd.DataFrame(repos).to_excel("repos_report.xlsx", index=False)
-        print("✅ Report generated: repos_report.xlsx")
+        save_to_excel(repos)
     else:
-        print("❌ No repositories found")
+        print(" No repositories found or error occurred.")
