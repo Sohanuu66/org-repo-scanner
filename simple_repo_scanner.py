@@ -1,9 +1,9 @@
 import requests
 import pandas as pd
+import os
 
-# Replace with your token and org name:
-GITHUB_TOKEN = "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"
-ORG_NAME = "Sohan-org"
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+ORG_NAME = os.getenv("GITHUB_ORG")
 
 API_URL = f"https://api.github.com/orgs/{ORG_NAME}/repos"
 HEADERS = {
@@ -36,11 +36,9 @@ def get_repos():
 def save_to_excel(data):
     df = pd.DataFrame(data)
     df.to_excel("repos_report.xlsx", index=False)
-    print("Report saved as repos_report.xlsx")
+    print("Saved to repos_report.xlsx")
 
 if __name__ == "__main__":
     repos = get_repos()
     if repos:
         save_to_excel(repos)
-    else:
-        print(" No repositories found or error occurred.")
