@@ -1,38 +1,37 @@
-name: Repository Scanner with Auto-Commit
+name: GitHub Org Repo Scanner
 
 on:
-  schedule:
-    - cron: '0 5 * * 1'  # Weekly on Mondays 5AM UTC
-  workflow_dispatch:     # Manual trigger option
+  workflow_dispatch:  # Allows manual trigger from GitHub Actions tab
 
 jobs:
-  scan-and-commit:
+  scan:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0  # Needed for git history
-    
+    - name: Checkout code
+      uses: actions/checkout@v3
+
     - name: Set up Python
       uses: actions/setup-python@v4
-      with: 
-        python-version: '3.10'
-    
+      with:
+        python-version: 3.x
+
     - name: Install dependencies
-      run: |
-        pip install pandas openpyxl requests
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-    
-    - name: Run scanner
+      run: pip install requests pandas openpyxl
+
+    - name: Run the scan script
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
-        ORG_NAME: ${{ vars.ORG_NAME }}
-      run: python simple_repo_scanner.py
-    
-    - name: Commit and push report
+        MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+        MY_GITHUB_ORG: ${{ secrets.MY_GITHUB_ORG }}
+      run: python scan_org_repos.py
+
+    - name: Commit and push Excel report
+      env:
+        MY_GITHUB_PAT: ${{ secrets.MY_GITHUB_PAT }}
       run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
         git add repos_report.xlsx
-        git commit -m "Automated update: Repository scan report $(date +'%Y-%m-%d')"
-        git push
+        git commit -m "Auto-uploaded repo report" || echo "Nothing to commit"
+        git remote set-url origin https://x-access-token:${MY_GITHUB_PAT}@github.com/${{ github.repository }}
+        git push origin HEAD:main
