@@ -27,7 +27,7 @@ jobs:
     - name: Run repository scanner
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        ORG_NAME: ${{ vars.ORG_NAME || 'your-org-name' }}
+        ORG_NAME: ${{ vars.ORG_NAME || 'Sohan-org' }}
       run: |
         python simple_repo_scanner.py
         
